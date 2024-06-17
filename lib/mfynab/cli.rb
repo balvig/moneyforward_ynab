@@ -42,6 +42,7 @@ class CLI
           headless: !ENV.key?("NO_HEADLESS"),
           save_path: save_path,
           timeout: 30,
+          process_timeout: 30,
         )
       end
 
