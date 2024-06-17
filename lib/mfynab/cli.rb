@@ -192,7 +192,15 @@ class CLI
             next
           end
 
-          transactions = @mf_data[mapping["money_forward_name"]].map do |row|
+          mf_account_name = mapping.fetch("money_forward_name")
+          data_to_import = @mf_data.fetch(mf_account_name, [])
+
+          if data_to_import.empty?
+            puts "No data found for Money Forward account: #{mf_account_name}. Skipping."
+            next
+          end
+
+          transactions = data_to_import.map do |row|
             import_id = shorten_id("MFBY:v1:#{row["id"]}")
 
             {
