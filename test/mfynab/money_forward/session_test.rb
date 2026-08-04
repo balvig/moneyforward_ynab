@@ -18,6 +18,7 @@ module MFYNAB
             logger: null_logger,
             base_url: "http://#{host}:#{port}",
             cookie_cache_path: temp_cookie_cache_path,
+            login_timeout: 1,
           )
 
           assert_raises(RuntimeError, "Login failed") do

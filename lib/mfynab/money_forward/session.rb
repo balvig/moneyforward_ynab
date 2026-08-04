@@ -11,12 +11,18 @@ module MFYNAB
       DEFAULT_BASE_URL = "https://moneyforward.com"
       SIGNIN_PATH = "/sign_in"
 
-      def initialize(logger:, username: nil, password: nil, base_url: DEFAULT_BASE_URL, cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH)
+      # Give a human time to complete Money Forward's additional
+      # authentication (eg. email code) in the browser.
+      DEFAULT_LOGIN_TIMEOUT = 300
+
+      def initialize(logger:, username: nil, password: nil, base_url: DEFAULT_BASE_URL,
+                     cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH, login_timeout: DEFAULT_LOGIN_TIMEOUT)
         @username = username
         @password = password
         @logger = logger
         @base_url = URI(base_url)
         @cookie_cache_path = cookie_cache_path
+        @login_timeout = login_timeout
       end
 
       def login
@@ -38,9 +44,7 @@ module MFYNAB
       end
 
       def cookie
-        @cookie || read_cookie_cache ||
-          # FIXME: use custom error class
-          raise("No session cookie found. Run `mfynab login` first.")
+        @cookie || read_cookie_cache || raise("No session cookie found. Run `mfynab login` first.")
       end
 
       DEFAULT_COOKIE_CACHE_PATH = File.join(Dir.home, ".config", "mfynab", "cookie")
@@ -84,7 +88,7 @@ module MFYNAB
 
       private
 
-        attr_reader :username, :password, :logger, :base_url, :cookie_cache_path
+        attr_reader :username, :password, :logger, :base_url, :cookie_cache_path, :login_timeout
         attr_writer :cookie
 
         def http_request(request)
@@ -101,7 +105,7 @@ module MFYNAB
         def with_ferrum
           browser = Ferrum::Browser.new(
             timeout: 30,
-            headless: !ENV.key?("NO_HEADLESS"),
+            headless: false,
             # FIXME: this was needed to be able to run Chromium headless
             # within Docker as root, but I'd rather not rely on it.
             browser_options: { "no-sandbox": nil },
@@ -128,12 +132,6 @@ module MFYNAB
           Timeout.timeout(login_timeout) do
             sleep 0.1 until browser.body.include?("ログアウト")
           end
-        end
-
-        # When the browser is visible, a human may need time to complete
-        # Money Forward's additional authentication (eg. email code).
-        def login_timeout
-          ENV.key?("NO_HEADLESS") ? 300 : 5
         end
     end
   end
