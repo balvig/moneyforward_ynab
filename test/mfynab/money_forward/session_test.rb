@@ -17,6 +17,7 @@ module MFYNAB
             password: "wrong_password",
             logger: null_logger,
             base_url: "http://#{host}:#{port}",
+            cookie_cache_path: temp_cookie_cache_path,
           )
 
           assert_raises(RuntimeError, "Login failed") do
@@ -32,6 +33,7 @@ module MFYNAB
             password: "Passw0rd!",
             logger: null_logger,
             base_url: "http://#{host}:#{port}",
+            cookie_cache_path: temp_cookie_cache_path,
           ).login
 
           assert_equal "_moneybook_session", session_cookie.name
@@ -40,6 +42,11 @@ module MFYNAB
       end
 
       private
+
+        # Avoid clobbering the real ~/.config/mfynab/cookie when tests log in
+        def temp_cookie_cache_path
+          @_temp_cookie_cache_path ||= File.join(Dir.mktmpdir("mfynab_test"), "cookie")
+        end
 
         def while_running_fake_money_forward_app
           WebMock.disable_net_connect!(allow_localhost: true)
