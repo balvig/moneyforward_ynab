@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/balvig/moneyforward_ynab.git
-  revision: 412e0d8589f4ab8105f025c32e6aa945fd61ffe4
+  revision: dc713541d6fe00d5da5e5420e79166e53add96fb
   branch: sto/kamal
   specs:
     mfynab (0.1.4)
