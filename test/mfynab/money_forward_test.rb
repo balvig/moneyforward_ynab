@@ -18,6 +18,8 @@ module MFYNAB
         username: "david@example.com",
         password: "Passw0rd!",
         logger: null_logger,
+        # Point away from the real cookie cache, so the stubbed login is used
+        cookie_cache_path: File.join(Dir.mktmpdir("mfynab_test"), "cookie"),
       )
 
       money_forward = MoneyForward.new(
