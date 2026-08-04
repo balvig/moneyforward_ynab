@@ -11,12 +11,7 @@ module MFYNAB
       DEFAULT_BASE_URL = "https://moneyforward.com"
       SIGNIN_PATH = "/sign_in"
 
-      # Give a human time to complete Money Forward's additional
-      # authentication (eg. email code) in the browser.
-      DEFAULT_LOGIN_TIMEOUT = 300
-
-      def initialize(logger:, base_url: DEFAULT_BASE_URL,
-                     cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH, login_timeout: DEFAULT_LOGIN_TIMEOUT)
+      def initialize(logger:, base_url: DEFAULT_BASE_URL, cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH, login_timeout: 300)
         @logger = logger
         @base_url = URI(base_url)
         @cookie_cache_path = cookie_cache_path
