@@ -58,10 +58,11 @@ Running MFYNAB is a two-step process:
 
 1. `mfynab login` logs in to Money Forward using `MONEYFORWARD_USERNAME` and
    `MONEYFORWARD_PASSWORD`, then saves the session cookie to
-   `~/.config/mfynab/cookie`. This only needs to happen once (and again if
-   the session ever expires). The login happens in a visible browser window,
+   `~/.config/mfynab/cookie`. The login happens in a visible browser window,
    giving you time to complete Money Forward's additional email
-   authentication if it is requested.
+   authentication if it is requested. This only needs to happen once:
+   Money Forward expires sessions after 30 days without use, so as long as
+   imports run regularly, the cookie stays valid.
 2. `mfynab import CONFIG_FILE` downloads transactions from Money Forward
    using the saved session cookie (it never logs in), and imports them into
    YNAB using `YNAB_ACCESS_TOKEN`.
@@ -85,92 +86,52 @@ op run --env-file=.env -- mfynab import mfynab-david.yml
 After checking out the repo, run `bundle install` to install dependencies.
 Then, run `bin/rake test` to run the tests.
 
-## Running MFYNAB with cron and Docker
+## Deploying with Kamal
 
-The `docker-example/` directory contains sample files that'll help you schedule MFYNAB inside a Docker container.
+The `deploy/` directory contains a [Kamal](https://kamal-deploy.org/) project
+that runs `mfynab import` on a schedule (see `deploy/config/crontab`) inside a
+Docker container on a remote server.
 
-See the comments in each file for more details on how it works.
+How it works:
 
-First you'll want to bring your MFYNAB configuration file into this directory:
+- The Docker image installs mfynab from a GitHub branch (see `deploy/Gemfile`)
+  and runs cron in the foreground.
+- Secrets are fetched from 1Password at deploy time (see `deploy/.kamal/secrets`).
+- The server never logs in to Money Forward: the local session cookie saved by
+  `mfynab login` is passed to the container as the `COOKIE_CACHE_PRIME`
+  environment variable and written to the container's cookie cache on boot
+  (see `deploy/entrypoint.sh`). This avoids Money Forward's additional email
+  authentication, which a headless server cannot complete.
 
-```sh
-cp path_to/config.yml docker_example/
-```
-
-Then you can build the Docker image:
-
-```sh
-docker build -t mfynab docker_example/
-```
-
-Finally, you can run the Docker image. Note that you need to pass secrets as environment variables:
-
-```sh
-docker run -d \
-  --env YNAB_ACCESS_TOKEN=... \
-  --env MONEYFORWARD_USERNAME=... \
-  --env MONEYFORWARD_PASSWORD='...' \
-  --name mfynab mfynab
-```
-
-You can also use the 1Password CLI ([documented here](#one-password-cli)) for this step:
+To deploy:
 
 ```sh
-op run --env-file=.env -- sh -c 'docker run -d \
-  --env YNAB_ACCESS_TOKEN=$YNAB_ACCESS_TOKEN \
-  --env MONEYFORWARD_USERNAME=$MONEYFORWARD_USERNAME \
-  --env MONEYFORWARD_PASSWORD="$MONEYFORWARD_PASSWORD" \
-  --name mfynab mfynab'
+mfynab login               # unless you already have a valid session cookie
+cd deploy
+bundle install
+bundle exec kamal setup    # first deploy; use `kamal deploy` afterwards
 ```
+
+To trigger a sync manually, or follow the logs:
+
+```sh
+bundle exec kamal app exec --reuse "bundle exec mfynab import config/mfynab.yml"
+bundle exec kamal app logs -f
+```
+
+If the session cookie ever expires, run `mfynab login` locally again, then
+`bundle exec kamal deploy` to push the new cookie to the server.
 
 ## Roadmap
 
-### Deploy/Automate
-
-I'd like to be able to deploy something to a server, that would run the sync on a schedule (eg. every hour or day).
-I could for example use Kamal to produce a Docker image that includes all needed secrets and will run a script on a schedule.
-
-### Better session management
-
-- If Money Forward username/password is not passed in the environment, open a browser and ask the user to log in.
-- Save cookie for reuse. Every request to Money Forward refreshes the `_moneybook_session` cookie with a new expiry date. (Appears to be a full year.) If we save that cookie every time it is refreshed, then use it in future requests, we can keep the session active for a long time (for ever?).
-
-Previous notes:
-- Open browser, ask user to log into MoneyForward and store cookie? (Does it expire though?)
-  - Or prompt user from credentials in terminal and fill in form in headless browser
-  - Need to handle case when cookie has expired:
-    > セキュリティ設定	最終利用時間から[30日]後に自動ログアウト
-
-### Later
-
+- Save the session cookie again after every request. Money Forward refreshes
+  the `_moneybook_session` cookie's expiry date on each request, so re-saving
+  it would keep the session alive indefinitely.
 - Use Thor to manage the CLI. (And/or TTY?)
 - Implement `Transaction` model to extract some logic from existing classes.
 - Handle the Amazon account differently (use account name as payee instead of content?)
-- Implement CLI to setup config.
-  - Save/update session_id so browser is only needed once.
 - Generate new configuration file with the command line.
 - Make reusable fixtures instead of setting up every test
-- Improve secrets handling:
-  - Store config/credentials in `~/.config/`?
-  - Encrypt config, use Keyring or other OS-level secure storage?
-    - Possible to write a gem with native extension based on <https://github.com/hrantzsch/keychain>? (or <https://github.com/hwchen/keyring-rs>?)
 - Why does it show a higher number in imported, than importing?
-  ```
-  Importing 46 transactions for AAA
-  Imported 51 transactions for AAA (0 duplicates)
-  Importing 10 transactions for BBB
-  Imported 10 transactions for BBB (0 duplicates)
-  Importing 2 transactions for CCC
-  Imported 3 transactions for CCC (0 duplicates)
-  Importing 21 transactions for DDD
-  Imported 24 transactions for DDD (0 duplicates)
-  ```
 - Passing logger everywhere feels weird.
-- Prompt user for captcha and other account extra authentication required by Money Forward?
 - One might want to run a single Docker instance for multiple users, but the current setup does not allow that easily. We'll want to bring the secret environment variables into the config file, making it possible to assign them to a given "user", and name them accordingly.
-
-
-
-WIP:
-Container on Kamal fails to log in because of the "Additional Authentication via Email".
-Will have to implement the "log in on deploy" to get it to work.

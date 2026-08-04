@@ -1,6 +1,0 @@
-# frozen_string_literal: true
-
-source "https://rubygems.org"
-
-# FIXME: point to the latest RubyGems release
-gem "mfynab", github: "davidstosik/mfynab", branch: "sto/docker"
