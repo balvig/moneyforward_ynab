@@ -40,11 +40,10 @@ module MFYNAB
       # Logs in to Money Forward with credentials and saves the session
       # cookie, so that subsequent imports don't need credentials.
       def login
-        MoneyForward::Session.new(
+        session.login(
           username: ENV.fetch("MONEYFORWARD_USERNAME"),
           password: ENV.fetch("MONEYFORWARD_PASSWORD"),
-          logger: logger,
-        ).login
+        )
 
         logger.info("Session cookie saved.")
       end

@@ -15,24 +15,18 @@ module MFYNAB
       # authentication (eg. email code) in the browser.
       DEFAULT_LOGIN_TIMEOUT = 300
 
-      def initialize(logger:, username: nil, password: nil, base_url: DEFAULT_BASE_URL,
+      def initialize(logger:, base_url: DEFAULT_BASE_URL,
                      cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH, login_timeout: DEFAULT_LOGIN_TIMEOUT)
-        @username = username
-        @password = password
         @logger = logger
         @base_url = URI(base_url)
         @cookie_cache_path = cookie_cache_path
         @login_timeout = login_timeout
       end
 
-      def login
-        unless username && password
-          raise "Attempted to login to MoneyForward with user/password but MONEYFORWARD_USERNAME/MONEYFORWARD_PASSWORD are not set"
-        end
-
+      def login(username:, password:)
         logger.info("Logging in to Money Forward...")
         with_ferrum do |browser|
-          submit_login_form(browser)
+          submit_login_form(browser, username: username, password: password)
 
           self.cookie = browser.cookies[COOKIE_NAME].tap do |cookie|
             write_cookie_cache(cookie)
@@ -88,7 +82,7 @@ module MFYNAB
 
       private
 
-        attr_reader :username, :password, :logger, :base_url, :cookie_cache_path, :login_timeout
+        attr_reader :logger, :base_url, :cookie_cache_path, :login_timeout
         attr_writer :cookie
 
         def http_request(request)
@@ -125,7 +119,7 @@ module MFYNAB
           browser&.quit
         end
 
-        def submit_login_form(browser)
+        def submit_login_form(browser, username:, password:)
           browser.goto("#{base_url}#{SIGNIN_PATH}")
           browser.at_css("input[type='email']").focus.type(username)
           browser.at_css("input[type='password']").focus.type(password, :Enter)

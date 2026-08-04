@@ -13,8 +13,6 @@ module MFYNAB
       def test_login_raises_if_wrong_credentials
         while_running_fake_money_forward_app do |host, port|
           session = Session.new(
-            username: "david@example.com",
-            password: "wrong_password",
             logger: null_logger,
             base_url: "http://#{host}:#{port}",
             cookie_cache_path: temp_cookie_cache_path,
@@ -22,7 +20,7 @@ module MFYNAB
           )
 
           assert_raises(RuntimeError, "Login failed") do
-            session.login
+            session.login(username: "david@example.com", password: "wrong_password")
           end
         end
       end
@@ -30,12 +28,10 @@ module MFYNAB
       def test_login_happy_path
         while_running_fake_money_forward_app do |host, port|
           session_cookie = Session.new(
-            username: "david@example.com",
-            password: "Passw0rd!",
             logger: null_logger,
             base_url: "http://#{host}:#{port}",
             cookie_cache_path: temp_cookie_cache_path,
-          ).login
+          ).login(username: "david@example.com", password: "Passw0rd!")
 
           assert_equal "_moneybook_session", session_cookie.name
           assert_equal "dummy_session_id", session_cookie.value
