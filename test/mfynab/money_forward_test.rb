@@ -14,12 +14,13 @@ module MFYNAB
     def test_download_csv_downloads_csv_by_passing_a_cookie_and_converts_data_to_utf8
       session_id = "dummy_session_id"
 
+      # Simulate a previous `mfynab login` by seeding a cookie cache file
+      cookie_cache_path = File.join(Dir.mktmpdir("mfynab_test"), "cookie")
+      File.write(cookie_cache_path, JSON.dump("name" => "_moneybook_session", "value" => session_id))
+
       session = MoneyForward::Session.new(
-        username: "david@example.com",
-        password: "Passw0rd!",
         logger: null_logger,
-        # Point away from the real cookie cache, so the stubbed login is used
-        cookie_cache_path: File.join(Dir.mktmpdir("mfynab_test"), "cookie"),
+        cookie_cache_path: cookie_cache_path,
       )
 
       money_forward = MoneyForward.new(
@@ -36,13 +37,10 @@ module MFYNAB
       end
 
       Dir.mktmpdir do |tmpdir|
-        cookie = Ferrum::Cookies::Cookie.new("name" => "_moneybook_session", "value" => session_id)
-        session.stub(:login, cookie) do
-          money_forward.download_csv(
-            path: tmpdir,
-            months: 3,
-          )
-        end
+        money_forward.download_csv(
+          path: tmpdir,
+          months: 3,
+        )
         expected_file_names = dates.map { "#{_1.strftime('%Y-%m')}.csv" }
         produced_files = Dir[File.join(tmpdir, "*.csv")]
 

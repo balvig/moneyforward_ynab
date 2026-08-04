@@ -11,7 +11,7 @@ module MFYNAB
       DEFAULT_BASE_URL = "https://moneyforward.com"
       SIGNIN_PATH = "/sign_in"
 
-      def initialize(username:, password:, logger:, base_url: DEFAULT_BASE_URL, cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH)
+      def initialize(logger:, username: nil, password: nil, base_url: DEFAULT_BASE_URL, cookie_cache_path: DEFAULT_COOKIE_CACHE_PATH)
         @username = username
         @password = password
         @logger = logger
@@ -38,7 +38,9 @@ module MFYNAB
       end
 
       def cookie
-        @cookie || read_cookie_cache || login
+        @cookie || read_cookie_cache ||
+          # FIXME: use custom error class
+          raise("No session cookie found. Run `mfynab login` first.")
       end
 
       DEFAULT_COOKIE_CACHE_PATH = File.join(Dir.home, ".config", "mfynab", "cookie")

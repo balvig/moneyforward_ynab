@@ -8,6 +8,8 @@ require "mfynab/ynab_transaction_importer"
 
 module MFYNAB
   class CLI
+    USAGE = "Usage: mfynab login | mfynab import CONFIG_FILE"
+
     def self.start(argv)
       new(argv).start
     end
@@ -17,27 +19,56 @@ module MFYNAB
     end
 
     def start
-      logger.info("Running...")
-
-      money_forward.update_accounts(money_forward_account_names)
-
-      Dir.mktmpdir("mfynab") do |save_path|
-        money_forward.download_csv(
-          path: save_path,
-          months: months_to_sync,
-        )
-
-        data = MoneyForwardData.new(logger: logger)
-        data.read_all_csv(save_path)
-        ynab_transaction_importer.run(data.to_h)
+      case command
+      when "login"
+        login
+      when "import"
+        import
+      else
+        abort(USAGE)
       end
-
-      logger.info("Done!")
     end
 
     private
 
       attr_reader :argv
+
+      def command
+        argv[0]
+      end
+
+      # Logs in to Money Forward with credentials and saves the session
+      # cookie, so that subsequent imports don't need credentials.
+      def login
+        MoneyForward::Session.new(
+          username: ENV.fetch("MONEYFORWARD_USERNAME"),
+          password: ENV.fetch("MONEYFORWARD_PASSWORD"),
+          logger: logger,
+        ).login
+
+        logger.info("Session cookie saved.")
+      end
+
+      # Imports Money Forward transactions into YNAB, using a previously
+      # saved session cookie. Never attempts to log in.
+      def import
+        logger.info("Running...")
+
+        money_forward.update_accounts(money_forward_account_names)
+
+        Dir.mktmpdir("mfynab") do |save_path|
+          money_forward.download_csv(
+            path: save_path,
+            months: months_to_sync,
+          )
+
+          data = MoneyForwardData.new(logger: logger)
+          data.read_all_csv(save_path)
+          ynab_transaction_importer.run(data.to_h)
+        end
+
+        logger.info("Done!")
+      end
 
       def money_forward_account_names
         @_money_forward_account_names = config["accounts"].map { _1["money_forward_name"] }
@@ -61,17 +92,13 @@ module MFYNAB
       end
 
       def session
-        @_session ||= MoneyForward::Session.new(
-          username: config["moneyforward_username"],
-          password: config["moneyforward_password"],
-          logger: logger,
-        )
+        @_session ||= MoneyForward::Session.new(logger: logger)
       end
 
       def config_file
-        raise "You need to pass a config file" if argv.empty?
+        raise "You need to pass a config file" if argv[1].nil?
 
-        argv[0]
+        argv[1]
       end
 
       def config
@@ -81,8 +108,6 @@ module MFYNAB
           .first
           .merge(
             "ynab_access_token" => ENV.fetch("YNAB_ACCESS_TOKEN"),
-            "moneyforward_username" => ENV.fetch("MONEYFORWARD_USERNAME", nil),
-            "moneyforward_password" => ENV.fetch("MONEYFORWARD_PASSWORD", nil),
           )
       end
 

@@ -1,0 +1,18 @@
+Jens:
+  ynab_budget: "Our Budget - JP"
+  months_to_sync: 3
+  accounts:
+    - money_forward_name: "Amazon (Jens)"
+      ynab_name: "📦 Amazon (Jens)"
+    - money_forward_name: "Amazon (Megumi)"
+      ynab_name: "📦 Amazon (Megumi)"
+    - money_forward_name: "Rakuten (Jens)"
+      ynab_name: "🇯🇵 Rakuten (Jens)"
+    - money_forward_name: "Rakuten (Megumi)"
+      ynab_name: "🇯🇵 Rakuten (Megumi)"
+    - money_forward_name: "Epos (Megumi)"
+      ynab_name: "Epos (Megumi)"
+    - money_forward_name: "Rakuten Card (Jens)"
+      ynab_name: "💳 Rakuten Card (Jens)"
+    - money_forward_name: "Balvig LLC"
+      ynab_name: "🏢 Balvig LLC"

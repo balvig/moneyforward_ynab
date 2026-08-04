@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "kamal", "~> 2.5"
+gem "mfynab", github: "balvig/moneyforward_ynab", branch: "sto/kamal"

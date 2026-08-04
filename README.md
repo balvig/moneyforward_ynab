@@ -54,18 +54,30 @@ YNAB_ACCESS_TOKEN=op://Private/YNAB/secrets/API token
 
 ## Running
 
-To run, you'll simply need to set the environment variables.
+Running MFYNAB is a two-step process:
+
+1. `mfynab login` logs in to Money Forward using `MONEYFORWARD_USERNAME` and
+   `MONEYFORWARD_PASSWORD`, then saves the session cookie to
+   `~/.config/mfynab/cookie`. This only needs to happen once (and again if
+   the session ever expires). Set `NO_HEADLESS=1` to watch the login in a
+   visible browser, which also gives you time to complete Money Forward's
+   additional email authentication if it is requested.
+2. `mfynab import CONFIG_FILE` downloads transactions from Money Forward
+   using the saved session cookie (it never logs in), and imports them into
+   YNAB using `YNAB_ACCESS_TOKEN`.
 
 Using `dotenv`, that'll look like this:
 
 ```sh
-dotenv mfynab mfynab-david.yml
+NO_HEADLESS=1 dotenv mfynab login
+dotenv mfynab import mfynab-david.yml
 ```
 
 Using 1Password's CLI, that would look like this:
 
 ```sh
-op run --env-file=.env -- mfynab mfynab-david.yml
+NO_HEADLESS=1 op run --env-file=.env -- mfynab login
+op run --env-file=.env -- mfynab import mfynab-david.yml
 ```
 
 ## Development
