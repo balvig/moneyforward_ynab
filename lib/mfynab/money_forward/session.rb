@@ -123,9 +123,15 @@ module MFYNAB
           browser.goto("#{base_url}#{SIGNIN_PATH}")
           browser.at_css("input[type='email']").focus.type(username)
           browser.at_css("input[type='password']").focus.type(password, :Enter)
-          Timeout.timeout(5) do
+          Timeout.timeout(login_timeout) do
             sleep 0.1 until browser.body.include?("ログアウト")
           end
+        end
+
+        # When the browser is visible, a human may need time to complete
+        # Money Forward's additional authentication (eg. email code).
+        def login_timeout
+          ENV.key?("NO_HEADLESS") ? 300 : 5
         end
     end
   end
