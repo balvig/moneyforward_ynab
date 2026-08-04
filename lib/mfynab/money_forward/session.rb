@@ -19,6 +19,10 @@ module MFYNAB
       end
 
       def login
+        unless username && password
+          raise "Attempted to login to MoneyForward with user/password but MONEYFORWARD_USERNAME/MONEYFORWARD_PASSWORD are not set"
+        end
+
         logger.info("Logging in to Money Forward...")
         with_ferrum do |browser|
           submit_login_form(browser)

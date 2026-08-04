@@ -81,8 +81,8 @@ module MFYNAB
           .first
           .merge(
             "ynab_access_token" => ENV.fetch("YNAB_ACCESS_TOKEN"),
-            "moneyforward_username" => ENV.fetch("MONEYFORWARD_USERNAME"),
-            "moneyforward_password" => ENV.fetch("MONEYFORWARD_PASSWORD"),
+            "moneyforward_username" => ENV.fetch("MONEYFORWARD_USERNAME", nil),
+            "moneyforward_password" => ENV.fetch("MONEYFORWARD_PASSWORD", nil),
           )
       end
 
